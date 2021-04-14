@@ -41,7 +41,8 @@ public class Client {
 	static  JTextField searchquery = new JTextField(15);
 	static  JTextField topnquery = new JTextField(15);
 	static JButton home = new JButton("BACK");
-
+	static JTable jtS = null;
+	static JTable jtT = null;
 	static JFrame frame = new JFrame("Client");
 	public static ArrayList<String> stringToList(String s) {
 	    return new ArrayList<>(Arrays.asList(s.split(" ")));
@@ -114,12 +115,7 @@ public class Client {
 				
 				
 				 //wait for results;
-                /*try {
-					Thread.sleep(180000);
-				} catch (InterruptedException e3) {
-					// TODO Auto-generated catch block
-					e3.printStackTrace();
-				}*/
+                
 				
 				
 				JButton topN = new JButton("Top-N");
@@ -135,12 +131,20 @@ public class Client {
 						searchquery.setBounds(20,20,240,50);
 						frame.getContentPane().add(searchquery);
 						home.setBounds(30,350,160,30);
+						searchquery.setVisible(true);
+						home.setVisible(true);
 						home.addActionListener(new ActionListener() {
 							@Override
 							public void actionPerformed(ActionEvent e) {
 								topnquery.setVisible(false);
 								topN.setVisible(true);
 								search.setVisible(true);
+								if(jtS!=null)
+									jtS.setVisible(false);
+								if(jtT!=null)
+									jtT.setVisible(false);
+								if(searchquery!=null)
+									searchquery.setVisible(false);
 								home.setVisible(false);
 							}
 						});
@@ -163,13 +167,21 @@ public class Client {
 						topnquery.addActionListener(tfListener);
 						topnquery.setBounds(20,20,240,50);
 						frame.getContentPane().add(topnquery);
+						topnquery.setVisible(true);
 						home.setBounds(30,350,160,30);
+						home.setVisible(true);
 						home.addActionListener(new ActionListener() {
 							@Override
 							public void actionPerformed(ActionEvent e) {
 								topnquery.setVisible(false);
 								topN.setVisible(true);
 								search.setVisible(true);
+								if(jtS!=null)
+									jtS.setVisible(false);
+								if(jtT!=null)
+									jtT.setVisible(false);
+								if(topnquery!=null)
+									topnquery.setVisible(false);
 								home.setVisible(false);
 							}
 						});
@@ -192,7 +204,7 @@ public class Client {
 				//--jar=C:\Users\Maxwell\Desktop\Engine.jar 
 				//-- gs://dataproc-staging-us-central1-964478747399-flzelsoc/data/in/ gs://dataproc-staging-us-central1-964478747399-flzelsoc/data/out
 				
-/*
+
 				
 				GoogleCredentials credentials=null;
 				try {
@@ -225,7 +237,7 @@ public class Client {
 						e2.printStackTrace();
 					}
 
-		*/	
+		
 
 			}
 		});
@@ -292,14 +304,26 @@ public class Client {
     		        		System.out.println("match");
     		        		count = Integer.parseInt(temp[1]);
     		        		for(int j=2;j<temp.length;j++) {
-    		        			docIDs.add(temp[j]);
+    		        			if(!docIDs.contains(temp[j]))
+    		        				docIDs.add(temp[j]);
     		        		}
     		        		break;
     		        	}
     		        }
     		        System.out.println(count);
+    		        System.out.println(docIDs.size());
+    		        //Create Jtable
     		        
+    		        String[][] data = new String[1][2];
+    		        data[0][0] = inputString;
+    		        data[0][1] = Integer.toString(count);
+    		        String column[]={"Term","instances"};
+    		        jtS= new JTable(data,column);    
+    		        jtS.setBounds(30,100,250,50);          
+    		        JScrollPane sp=new JScrollPane(jtS);    
+    		        frame.add(jtS);
     		        
+    		        frame.setVisible(true);
                 } catch (Exception e1) {
                     System.out.println(e1);
                 }
@@ -314,9 +338,45 @@ public class Client {
 	      		int N = Integer.parseInt(inputString);
 	      		System.out.println(inputString);
 	      		
+	      		//Query top N results
+	      		GoogleCredentials credentials=null;
+				try {
+					credentials = GoogleCredentials.fromStream(new FileInputStream("C:\\Users\\Maxwell\\Desktop\\CS1660project2\\data\\helper\\cs1660project2-a9c34ca5f03e.json"))
+		                    .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/cloud-platform"));	
+					} catch (IOException e3) {
+					// TODO Auto-generated catch block
+					e3.printStackTrace();
+				}
+                    HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
+                    Dataproc dataproc = new Dataproc.Builder(new NetHttpTransport(),new JacksonFactory(), requestInitializer)
+                        .setApplicationName("TopN")
+                        .build();
+                    Job submittedJob = null;
+                    try {
+                    	submittedJob = dataproc.projects().regions().jobs().submit(
+						    "cs1660project2", "us-central1", new SubmitJobRequest()
+						        .setJob(new Job()
+						            .setPlacement(new JobPlacement()
+						                .setClusterName("cs1660dataproc2"))
+						        .setHadoopJob(new HadoopJob()
+						            .setMainClass("Engine")
+						            .setJarFileUris(ImmutableList.of("gs://dataproc-staging-us-central1-964478747399-flzelsoc/jars/TopN.jar"))
+						            .setArgs(ImmutableList.of(
+						            		"gs://dataproc-staging-us-central1-964478747399-flzelsoc/data/out/", "gs://dataproc-staging-us-central1-964478747399-flzelsoc/data/topNout/"
+)))))
+						.execute();
+					} catch (IOException e2) {
+						// TODO Auto-generated catch block
+						e2.printStackTrace();
+					}
 	      		
 	      		//Get Results of top N
-
+                    try {
+    					Thread.sleep(300000);
+    				} catch (InterruptedException e3) {
+    					// TODO Auto-generated catch block
+    					e3.printStackTrace();
+    				}
                     try {
                     	Storage cloudstorage = null;
         				try {
@@ -381,14 +441,11 @@ public class Client {
       		        	  i++;
         		        }
         		        String column[]={"instances","term"};
-        		        JTable jt=new JTable(data,column);    
-        		        jt.setBounds(30,100,300,300);          
-        		        JScrollPane sp=new JScrollPane(jt);    
-        		        frame.add(jt);
+        		        jtT=new JTable(data,column);    
+        		        jtT.setBounds(30,100,300,300);          
+        		        JScrollPane sp=new JScrollPane(jtT);    
+        		        frame.add(jtT);
         		        
-        		        JButton test = new JButton("HI");
-        		        test.setBounds(0,0,5,5);
-        		        frame.add(test);
         		        frame.setVisible(true);
         		        
                     } catch (Exception e1) {
