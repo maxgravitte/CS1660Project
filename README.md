@@ -12,6 +12,8 @@ Execution Instructions
 Inside Client.java replace path to google cloud credentials.
 Alternatively, given the full project structure, replace data/default/credentials.json with your credentials.
 
+If executing as docker image, set $DISPLAY=<youripaddress>:0.0
+
 Link to demonstration video:
 
 https://pitt.box.com/s/17j0to70i0gysmm3bqlld8fli2bajle4
