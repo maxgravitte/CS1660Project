@@ -1,5 +1,7 @@
 # CS1660Project
 
+![alt text](https://github.com/maxgravitte/CS1660Project/blob/main/projectDiagram.png)
+
 Solution to CS 1660 Project Option 2.
 The inverted indices and TopN hadoop jars function.
 GCP is successfully connected to from Java GUI.
