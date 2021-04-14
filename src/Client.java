@@ -34,6 +34,8 @@ import com.google.cloud.storage.StorageOptions;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.cloud.storage.Bucket;
+import com.google.cloud.storage.BucketInfo;
 
 public class Client {
 	static ArrayList<String> filePaths = new ArrayList<String>();
@@ -44,6 +46,7 @@ public class Client {
 	  }
 	
 	public static void main(String args[]) {
+		
 		JFrame frame = new JFrame("Client");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(300, 500);
@@ -121,88 +124,86 @@ public class Client {
 				// Code based on reference below.
 				// https://github.com/googleapis/java-dataproc/blob/master/samples/snippets/src/main/java/SubmitHadoopFsJob.java
 				
-				//CURRENTLY NOT WORKING MANUALLY SUBMIT JOBS INSTEAD
+				
 				//TRYING TO SUBMIT EQUIVALENT OF
 				//gcloud dataproc jobs submit hadoop 
 				//--cluster=cs1660dataproc2 --region=us-central1 
 				//--jar=C:\Users\Maxwell\Desktop\Engine.jar 
 				//-- gs://dataproc-staging-us-central1-964478747399-flzelsoc/data/in/ gs://dataproc-staging-us-central1-964478747399-flzelsoc/data/out
 				
-				
-				GoogleCredentials credentials = null;
+
+
+				GoogleCredentials credentials=null;
 				try {
-					credentials = GoogleCredentials.fromStream(new FileInputStream("C:\\Users\\Maxwell\\Desktop\\CS1660project2\\data\\default\\cs1660project2-42bea642ac8d.json"))
-					        .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/cloud-platform"));
-				} catch (FileNotFoundException e3) {
-					// TODO Auto-generated catch block
-					e3.printStackTrace();
-				} catch (IOException e3) {
+					credentials = GoogleCredentials.fromStream(new FileInputStream("C:\\Users\\Maxwell\\Desktop\\CS1660project2\\data\\helper\\cs1660project2-a9c34ca5f03e.json"))
+		                    .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/cloud-platform"));	
+					} catch (IOException e3) {
 					// TODO Auto-generated catch block
 					e3.printStackTrace();
 				}
-	            Dataproc dataproc=null;
-				dataproc = new Dataproc.Builder(new NetHttpTransport(), new JacksonFactory(), 
-				        new HttpCredentialsAdapter(credentials.createScoped(DataprocScopes.all())))
-				        .setApplicationName("SearchEngine").build();	            HadoopJob hJob = new HadoopJob();
-	            hJob.setMainJarFileUri("gs://dataproc-staging-us-central1-964478747399-flzelsoc/jars/Engine.jar");
-	            hJob.setArgs(ImmutableList.of("gs://dataproc-staging-us-central1-964478747399-flzelsoc/data/in/",
-	            		"gs://dataproc-staging-us-central1-964478747399-flzelsoc/data/output/"));
-	            
-	            try {
-					dataproc.projects().regions().jobs().submit("CS1660Project2" , "us-central1", new SubmitJobRequest()
-					             .setJob(new Job()
-					                .setPlacement(new JobPlacement()
-					                    .setClusterName("cs1660dataproc2"))
-					             .setHadoopJob(hJob)))
-					            .execute();
-				} catch (IOException e3) {
-					// TODO Auto-generated catch block
-					e3.printStackTrace();
-				}
-	            
-	            //This job fails because of an authentification issue.
-				  /*    Job response=null;
-					try {
-						response = submitJobAsOperationAsyncRequest.get();
-					} catch (InterruptedException e1) {
+                    HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
+                    Dataproc dataproc = new Dataproc.Builder(new NetHttpTransport(),new JacksonFactory(), requestInitializer)
+                        .setApplicationName("Engine")
+                        .build();
+                    Job submittedJob = null;
+                    try {
+                    	submittedJob = dataproc.projects().regions().jobs().submit(
+						    "cs1660project2", "us-central1", new SubmitJobRequest()
+						        .setJob(new Job()
+						            .setPlacement(new JobPlacement()
+						                .setClusterName("cs1660dataproc2"))
+						        .setHadoopJob(new HadoopJob()
+						            .setMainClass("Engine")
+						            .setJarFileUris(ImmutableList.of("gs://dataproc-staging-us-central1-964478747399-flzelsoc/jars/Engine.jar"))
+						            .setArgs(ImmutableList.of(
+						            		"gs://dataproc-staging-us-central1-964478747399-flzelsoc/data/in/", "gs://dataproc-staging-us-central1-964478747399-flzelsoc/data/output1"
+)))))
+						.execute();
+					} catch (IOException e2) {
 						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					} catch (ExecutionException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
+						e2.printStackTrace();
 					}
-				*/
-				//Download pregenereated results For victor Hugos' Les Mis and Notre Dame.
-				ArrayList<byte[]> mergeData = new ArrayList<byte[]>();
-		        int arrayLength = 0;
-
-		        Storage storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
-		        
-		        Page<Blob> blobs = storage.list(bucket, BlobListOption.prefix("data/out/"));
-		        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-
-		        Iterator<Blob> iterator = blobs.iterateAll().iterator();
-		        iterator.next();
-		        while (iterator.hasNext()) {
-		            Blob blob = iterator.next();
-		            blob.downloadTo(byteStream);
-		            mergeData.add(byteStream.toByteArray());
-		            arrayLength += byteStream.size();
-		            byteStream.reset();
-		        }
-		        try {
-					byteStream.close();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-		        byte[] finalMerge = new byte[arrayLength];
-		        
-		        int destination = 0;
-		        for (byte[] data: mergeData) {
-		            System.arraycopy(data, 0, finalMerge, destination, data.length);
-		            destination += data.length;
-		        }
+                    //wait for results;
+                    try {
+						Thread.sleep(180000);
+					} catch (InterruptedException e3) {
+						// TODO Auto-generated catch block
+						e3.printStackTrace();
+					}
+                    while (true) {
+                        try {
+                        	cloudstorage = null;
+            				try {
+            					cloudstorage = StorageOptions.newBuilder().setProjectId(projectId)
+            							.setCredentials(GoogleCredentials.fromStream(new FileInputStream(
+            									"C:\\Users\\Maxwell\\Desktop\\CS1660project2\\data\\default\\cs1660project2-42bea642ac8d.json")))
+            									//"C:/Users/Maxwell/Desktop/CS1660project2/data/cs1660project2-0ca809bd911a.json")))
+            							.build().getService();
+            				} catch (IOException e2) {
+            					// TODO Auto-generated catch block
+            					e2.printStackTrace();
+            				}
+            				StringBuffer output = new StringBuffer();
+            				String outputDir = "data/out";
+            				
+            				Bucket bucket2 = cloudstorage.get("dataproc-staging-us-central1-964478747399-flzelsoc");
+                            Page<Blob> blobs = bucket2.list(
+                                Storage.BlobListOption.prefix(outputDir));
+                            for (Blob blob : blobs.iterateAll()) {
+                                String blobContent = new String(blob.getContent());
+                                String[] parts = blobContent.split("\t");
+                                System.out.println(parts[0]);
+                            }
+                            System.out.println(output);
+                        } catch (Exception e1) {
+                            try {
+                                Thread.sleep(60000);
+                            } catch (InterruptedException e2) {
+                                e2.printStackTrace();
+                            }
+                        }
+                    }
+			
 
 			}
 		});
